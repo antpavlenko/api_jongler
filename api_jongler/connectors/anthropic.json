@@ -1,0 +1,8 @@
+{
+    "name": "anthropic",
+    "host": "api.anthropic.com",
+    "port": 443,
+    "protocol": "https",
+    "format": "json",
+    "requires_api_key": true
+}
