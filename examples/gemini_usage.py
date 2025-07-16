@@ -20,7 +20,7 @@ def example_text_generation():
     
     try:
         # Initialize with Gemini connector
-        jongler = APIJongler("gemini", is_tor_enabled=False)
+        jongler = APIJongler("generativelanguage.googleapis.com", is_tor_enabled=False)
         
         # Prepare the request for Gemini 1.5 Flash (free tier model)
         request_data = {
@@ -79,7 +79,7 @@ def example_chat_conversation():
     print("\n=== Google Gemini Chat Example ===")
     
     try:
-        jongler = APIJongler("gemini", is_tor_enabled=False)
+        jongler = APIJongler("generativelanguage.googleapis.com", is_tor_enabled=False)
         
         # Simulate a multi-turn conversation
         conversation_history = [
@@ -135,7 +135,7 @@ def example_with_system_instruction():
     print("\n=== Google Gemini System Instruction Example ===")
     
     try:
-        jongler = APIJongler("gemini", is_tor_enabled=False)
+        jongler = APIJongler("generativelanguage.googleapis.com", is_tor_enabled=False)
         
         request_data = {
             "systemInstruction": {

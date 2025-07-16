@@ -29,7 +29,7 @@ def main():
     try:
         # Test with httpbin (doesn't require real API keys)
         print("\n1. Testing with httpbin connector...")
-        jongler = APIJongler("httpbin", is_tor_enabled=False)
+        jongler = APIJongler("httpbin.org", is_tor_enabled=False)
         
         # Make a simple GET request
         response, status_code = jongler.run(
@@ -45,7 +45,7 @@ def main():
         del jongler
         
         print("\n2. Testing cleanup functionality...")
-        APIJongler.cleanUp("httpbin")
+        APIJongler.cleanUp("httpbin.org")
         
         print("\nExample completed successfully!")
         

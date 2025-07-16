@@ -52,6 +52,11 @@ class APIConnector:
         self.format = config_data.get("format", "json")
         self.requires_api_key = config_data.get("requires_api_key", True)
         
+        # Store any additional custom attributes from the config
+        for key, value in config_data.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
+        
     @property
     def base_url(self) -> str:
         """Get the base URL for the API"""
@@ -277,7 +282,7 @@ class APIJongler:
         
         # For Google/Gemini APIs, add API key as query parameter
         params = {}
-        if self.api_connector.name in ['gemini', 'google'] and self.current_api_key:
+        if self.api_connector.name in ['generativelanguage.googleapis.com', 'google'] and self.current_api_key:
             params['key'] = self.current_api_key
             # Remove Authorization header for Google APIs since they use query param
             if 'Authorization' in headers:
@@ -307,14 +312,6 @@ class APIJongler:
             self.logger.error(f"Request failed: {e}")
             raise RuntimeError(f"Request failed: {e}")
     
-    def _get_current_key_name(self) -> str:
-        """Get the name of the current API key"""
-        if not self.lock_file_path:
-            return "unknown"
-        
-        lock_filename = self.lock_file_path.stem
-        return lock_filename.replace(f"{self.api_connector_name}_", "")
-    
     def _prepare_headers(self) -> Dict[str, str]:
         """Prepare request headers including API key"""
         headers = {
@@ -322,10 +319,24 @@ class APIJongler:
         }
         
         if self.api_connector.requires_api_key and self.current_api_key:
-            # Most APIs use Bearer token authentication
-            headers['Authorization'] = f'Bearer {self.current_api_key}'
+            # Check if connector specifies custom auth header
+            if hasattr(self.api_connector, 'api_key_header') and self.api_connector.api_key_header:
+                header_name = self.api_connector.api_key_header
+                prefix = getattr(self.api_connector, 'api_key_prefix', '')
+                headers[header_name] = f'{prefix}{self.current_api_key}'
+            else:
+                # Default to Bearer token authentication
+                headers['Authorization'] = f'Bearer {self.current_api_key}'
         
         return headers
+    
+    def _get_current_key_name(self) -> str:
+        """Get the current API key name from lock file path"""
+        if not self.lock_file_path:
+            raise RuntimeError("No lock file path available")
+        
+        lock_filename = self.lock_file_path.stem
+        return lock_filename.replace(f"{self.api_connector_name}_", "")
     
     def _create_error_file(self, key_name: str):
         """Create error file for the given API key"""
@@ -352,7 +363,37 @@ class APIJongler:
         # Close session
         if self.session:
             self.session.close()
-    
+
+    def make_request(self, endpoint: str, method: str = 'POST', data: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Make a request with automatic JSON handling
+        
+        Args:
+            endpoint: API endpoint (relative path)
+            method: HTTP method (default: POST)
+            data: Request data as dictionary (will be JSON-encoded)
+        
+        Returns:
+            Response as dictionary
+        """
+        import json as json_lib
+        
+        # Convert data to JSON string if provided
+        if data is not None:
+            request_body = json_lib.dumps(data)
+        else:
+            request_body = ""
+        
+        # Use the existing run method
+        response_text, status_code = self.run(method, endpoint, request_body)
+        
+        # Try to parse as JSON
+        try:
+            return json_lib.loads(response_text)
+        except json_lib.JSONDecodeError:
+            # Return as plain text if not valid JSON
+            return {"text": response_text, "status_code": status_code}
+
     def __del__(self):
         """Destructor - cleanup resources"""
         self._disconnect()

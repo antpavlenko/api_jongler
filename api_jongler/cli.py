@@ -23,20 +23,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Make a GET request
-  python -m api_jongler.cli httpbin GET /json
-
-  # Make a POST request with OpenAI
-  python -m api_jongler.cli openai POST /v1/chat/completions '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Hello"}]}'
-
   # Use Google Gemini free tier
-  python -m api_jongler.cli gemini POST /v1beta/models/gemini-1.5-flash:generateContent '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+  python -m api_jongler.cli generativelanguage.googleapis.com POST /v1beta/models/gemini-1.5-flash:generateContent '{"contents":[{"parts":[{"text":"Hello"}]}]}'
 
-  # Use Tor connection
-  python -m api_jongler.cli --tor httpbin GET /ip
+  # Use Gemma models via Hugging Face
+  python -m api_jongler.cli api-inference.huggingface.co POST /models/google/gemma-2-9b-it '{"inputs":"What is machine learning?","parameters":{"max_new_tokens":100}}'
 
-  # Clean up lock files
-  python -m api_jongler.cli --cleanup httpbin
+  # Clean up lock files for Gemini
+  python -m api_jongler.cli --cleanup generativelanguage.googleapis.com
 
   # Clean up all lock files
   python -m api_jongler.cli --cleanup-all
@@ -46,7 +40,7 @@ Examples:
     parser.add_argument(
         "connector",
         nargs="?",
-        help="API connector name (e.g., openai, anthropic, httpbin)"
+        help="API connector name (e.g., generativelanguage.googleapis.com, api-inference.huggingface.co)"
     )
     
     parser.add_argument(

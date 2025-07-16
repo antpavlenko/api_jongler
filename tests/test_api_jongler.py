@@ -68,18 +68,18 @@ class TestAPIJongler(unittest.TestCase):
         self.config_file = Path(self.temp_dir) / "test_config.ini"
         
         # Write test configuration
-        config_content = """[httpbin]
+        config_content = """[generativelanguage.googleapis.com]
+key1 = test-gemini-key-1
+key2 = test-gemini-key-2
+
+[api-inference.huggingface.co]
+key1 = test-gemma-key-1
+key2 = test-gemma-key-2
+
+[httpbin.org]
 key1 = test-key-1
 key2 = test-key-2
 key3 = test-key-3
-
-[openai]
-key1 = sk-test-key-1
-key2 = sk-test-key-2
-
-[gemini]
-key1 = test-gemini-key-1
-key2 = test-gemini-key-2
 """
         
         with open(self.config_file, 'w') as f:
@@ -106,7 +106,7 @@ key2 = test-gemini-key-2
         os.environ['APIJONGLER_CONFIG'] = '/nonexistent/config.ini'
         
         with self.assertRaises(FileNotFoundError):
-            APIJongler("httpbin")
+            APIJongler("httpbin.org")
     
     def test_missing_config_env_var(self):
         """Test behavior when config environment variable is not set"""
@@ -114,7 +114,7 @@ key2 = test-gemini-key-2
             del os.environ['APIJONGLER_CONFIG']
         
         with self.assertRaises(ValueError):
-            APIJongler("httpbin")
+            APIJongler("httpbin.org")
     
     def test_missing_connector_file(self):
         """Test behavior when connector file doesn't exist"""
@@ -126,7 +126,7 @@ key2 = test-gemini-key-2
     
     def test_api_key_selection(self):
         """Test API key selection and locking"""
-        jongler = APIJongler("httpbin")
+        jongler = APIJongler("httpbin.org")
         
         # Should have selected an API key
         self.assertIsNotNone(jongler.current_api_key)
@@ -141,8 +141,8 @@ key2 = test-gemini-key-2
     
     def test_multiple_instances_key_rotation(self):
         """Test that multiple instances use different keys"""
-        jongler1 = APIJongler("httpbin")
-        jongler2 = APIJongler("httpbin")
+        jongler1 = APIJongler("httpbin.org")
+        jongler2 = APIJongler("httpbin.org")
         
         # Should use different keys
         self.assertNotEqual(jongler1.current_api_key, jongler2.current_api_key)
@@ -157,16 +157,16 @@ key2 = test-gemini-key-2
     def test_cleanup_function(self):
         """Test cleanup functionality"""
         # Create some instances
-        jongler1 = APIJongler("httpbin")
-        jongler2 = APIJongler("httpbin")
+        jongler1 = APIJongler("httpbin.org")
+        jongler2 = APIJongler("httpbin.org")
         
-        lock_files_before = list(jongler1._get_lock_directory().glob("httpbin_*.lock"))
+        lock_files_before = list(jongler1._get_lock_directory().glob("httpbin.org_*.lock"))
         self.assertGreaterEqual(len(lock_files_before), 2)
         
         # Clean up specific connector
-        APIJongler.cleanUp("httpbin")
+        APIJongler.cleanUp("httpbin.org")
         
-        lock_files_after = list(jongler1._get_lock_directory().glob("httpbin_*.lock"))
+        lock_files_after = list(jongler1._get_lock_directory().glob("httpbin.org_*.lock"))
         self.assertEqual(len(lock_files_after), 0)
         
         # Clean up instances (should not fail even though lock files are gone)
@@ -176,10 +176,10 @@ key2 = test-gemini-key-2
     def test_gemini_connector_loading(self):
         """Test that Gemini connector loads correctly"""
         try:
-            jongler = APIJongler("gemini")
+            jongler = APIJongler("generativelanguage.googleapis.com")
             
             # Should have loaded the connector
-            self.assertEqual(jongler.api_connector.name, "gemini")
+            self.assertEqual(jongler.api_connector.name, "generativelanguage.googleapis.com")
             self.assertEqual(jongler.api_connector.host, "generativelanguage.googleapis.com")
             self.assertEqual(jongler.api_connector.port, 443)
             self.assertEqual(jongler.api_connector.protocol, "https")
@@ -194,9 +194,34 @@ key2 = test-gemini-key-2
         except Exception as e:
             self.fail(f"Gemini connector test failed: {e}")
 
+    def test_gemma_connector_loading(self):
+        """Test that Gemma connector loads correctly"""
+        try:
+            jongler = APIJongler("api-inference.huggingface.co")
+            
+            # Should have loaded the connector
+            self.assertEqual(jongler.api_connector.name, "api-inference.huggingface.co")
+            self.assertEqual(jongler.api_connector.host, "api-inference.huggingface.co")
+            self.assertEqual(jongler.api_connector.port, 443)
+            self.assertEqual(jongler.api_connector.protocol, "https")
+            self.assertTrue(jongler.api_connector.requires_api_key)
+            
+            # Should have custom auth header
+            self.assertEqual(getattr(jongler.api_connector, 'api_key_header', None), "Authorization")
+            self.assertEqual(getattr(jongler.api_connector, 'api_key_prefix', None), "Bearer ")
+            
+            # Should have selected an API key
+            self.assertIsNotNone(jongler.current_api_key)
+            self.assertIn(jongler.current_api_key, ["test-gemma-key-1", "test-gemma-key-2"])
+            
+            del jongler
+            
+        except Exception as e:
+            self.fail(f"Gemma connector test failed: {e}")
+
     def test_http_request(self):
         """Test making actual HTTP request"""
-        jongler = APIJongler("httpbin")
+        jongler = APIJongler("httpbin.org")
         
         try:
             response, status_code = jongler.run(

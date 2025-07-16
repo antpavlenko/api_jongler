@@ -7,7 +7,7 @@ setup(
     name="api-jongler",
     version="1.0.0",
     author="Anton Pavlenko",
-    description="A middleware utility for calling external APIs using multiple API keys to reduce need for paid tiers",
+    description="A middleware utility for calling Google AI APIs (Gemini and Gemma) using multiple API keys to reduce need for paid tiers",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/antonpavlenko/api-jongler",

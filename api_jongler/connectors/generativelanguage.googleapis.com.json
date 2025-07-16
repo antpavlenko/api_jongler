@@ -1,5 +1,5 @@
 {
-    "name": "gemini",
+    "name": "generativelanguage.googleapis.com",
     "host": "generativelanguage.googleapis.com",
     "port": 443,
     "protocol": "https",

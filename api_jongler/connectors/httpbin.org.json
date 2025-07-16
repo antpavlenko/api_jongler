@@ -1,5 +1,5 @@
 {
-    "name": "httpbin",
+    "name": "httpbin.org",
     "host": "httpbin.org",
     "port": 443,
     "protocol": "https",

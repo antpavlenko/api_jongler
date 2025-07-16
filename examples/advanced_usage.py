@@ -25,7 +25,7 @@ def test_multiple_keys():
     try:
         for i in range(3):
             print(f"\nCreating APIJongler instance {i+1}...")
-            jongler = APIJongler("httpbin", is_tor_enabled=False)
+            jongler = APIJongler("httpbin.org", is_tor_enabled=False)
             jonglers.append(jongler)
             
             # Make a request
@@ -56,7 +56,7 @@ def test_tor_connection():
         print("Attempting to connect through Tor...")
         print("Note: This requires Tor to be installed and running on port 9050")
         
-        jongler = APIJongler("httpbin", is_tor_enabled=True)
+        jongler = APIJongler("httpbin.org", is_tor_enabled=True)
         
         # Get IP address to verify Tor connection
         response, status_code = jongler.run(
@@ -95,7 +95,7 @@ def test_error_handling():
         os.environ['APIJONGLER_CONFIG'] = '/nonexistent/path'
         
         try:
-            jongler = APIJongler("httpbin", is_tor_enabled=False)
+            jongler = APIJongler("httpbin.org", is_tor_enabled=False)
         except FileNotFoundError as e:
             print(f"✓ Correctly caught missing config: {e}")
         finally:
