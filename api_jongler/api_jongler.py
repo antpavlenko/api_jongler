@@ -253,9 +253,9 @@ class APIJongler:
         
         self.logger.info(f"Selected API key: {key_name} (locked)")
     
-    def run(self, method: str, endpoint: str, request: str) -> Tuple[str, int]:
+    def request(self, method: str, endpoint: str, request: str) -> Tuple[str, int]:
         """
-        Execute API request
+        Execute API request with raw string data
         
         Args:
             method: HTTP method (GET, POST, PUT, DELETE, etc.)
@@ -364,7 +364,7 @@ class APIJongler:
         if self.session:
             self.session.close()
 
-    def make_request(self, endpoint: str, method: str = 'POST', data: Dict[str, Any] = None) -> Dict[str, Any]:
+    def requestJSON(self, endpoint: str, method: str = 'POST', data: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         Make a request with automatic JSON handling
         
@@ -384,8 +384,8 @@ class APIJongler:
         else:
             request_body = ""
         
-        # Use the existing run method
-        response_text, status_code = self.run(method, endpoint, request_body)
+        # Use the existing request method
+        response_text, status_code = self.request(method, endpoint, request_body)
         
         # Try to parse as JSON
         try:
@@ -393,6 +393,23 @@ class APIJongler:
         except json_lib.JSONDecodeError:
             # Return as plain text if not valid JSON
             return {"text": response_text, "status_code": status_code}
+
+    # Backward compatibility aliases
+    def run(self, method: str, endpoint: str, request: str) -> Tuple[str, int]:
+        """
+        DEPRECATED: Use request() instead. This method will be removed in a future version.
+        """
+        import warnings
+        warnings.warn("run() is deprecated, use request() instead", DeprecationWarning, stacklevel=2)
+        return self.request(method, endpoint, request)
+    
+    def make_request(self, endpoint: str, method: str = 'POST', data: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        DEPRECATED: Use requestJSON() instead. This method will be removed in a future version.
+        """
+        import warnings
+        warnings.warn("make_request() is deprecated, use requestJSON() instead", DeprecationWarning, stacklevel=2)
+        return self.requestJSON(endpoint, method, data)
 
     def __del__(self):
         """Destructor - cleanup resources"""

@@ -29,7 +29,7 @@ def test_multiple_keys():
             jonglers.append(jongler)
             
             # Make a request
-            response, status_code = jongler.run(
+            response, status_code = jongler.request(
                 method="GET",
                 endpoint="/headers",
                 request=""
@@ -59,7 +59,7 @@ def test_tor_connection():
         jongler = APIJongler("httpbin.org", is_tor_enabled=True)
         
         # Get IP address to verify Tor connection
-        response, status_code = jongler.run(
+        response, status_code = jongler.request(
             method="GET",
             endpoint="/ip",
             request=""

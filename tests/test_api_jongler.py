@@ -224,7 +224,7 @@ key3 = test-key-3
         jongler = APIJongler("httpbin.org")
         
         try:
-            response, status_code = jongler.run(
+            response, status_code = jongler.request(
                 method="GET",
                 endpoint="/json",
                 request=""

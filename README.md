@@ -57,7 +57,7 @@ from api_jongler import APIJongler
 jongler = APIJongler("generativelanguage.googleapis.com", is_tor_enabled=False)
 
 # Use Gemini 1.5 Flash (free tier) for text generation
-response, status_code = jongler.run(
+response, status_code = jongler.request(
     method="POST",
     endpoint="/v1beta/models/gemini-1.5-flash:generateContent",
     request='{"contents":[{"parts":[{"text":"Hello, how are you?"}]}]}'
@@ -71,6 +71,55 @@ del jongler
 
 # Or manually clean up all locks and errors
 APIJongler.cleanUp()
+```
+
+### Working with JSON Data (Recommended)
+
+```python
+from api_jongler import APIJongler
+
+# Initialize with Gemini connector
+jongler = APIJongler("generativelanguage.googleapis.com")
+
+# Use requestJSON() for automatic JSON handling (recommended)
+response_data = jongler.requestJSON(
+    endpoint="/v1beta/models/gemini-1.5-flash:generateContent",
+    data={
+        "contents": [{"parts": [{"text": "Explain machine learning"}]}]
+    }
+)
+
+# Response is automatically parsed as dictionary
+print(response_data["candidates"][0]["content"]["parts"][0]["text"])
+```
+
+### Method Comparison
+
+APIJongler provides two methods for making requests:
+
+| Method | Input | Output | Use Case |
+|--------|--------|---------|----------|
+| `request()` | Raw string | `(response_text, status_code)` | Low-level control, non-JSON APIs |
+| `requestJSON()` | Python dict | Parsed dictionary | JSON APIs (recommended) |
+
+**Example with both methods:**
+
+```python
+# Low-level with request()
+response_text, status_code = jongler.request(
+    method="POST",
+    endpoint="/v1beta/models/gemini-1.5-flash:generateContent", 
+    request='{"contents":[{"parts":[{"text":"Hello"}]}]}'  # Raw JSON string
+)
+import json
+data = json.loads(response_text)  # Manual parsing
+
+# High-level with requestJSON() 
+data = jongler.requestJSON(
+    endpoint="/v1beta/models/gemini-1.5-flash:generateContent",
+    data={"contents": [{"parts": [{"text": "Hello"}]}]}  # Python dict
+)
+# No manual parsing needed
 ```
 
 ### Available Gemini Models
@@ -135,7 +184,7 @@ from api_jongler import APIJongler
 
 # Use Gemma 2 9B model
 jongler = APIJongler("api-inference.huggingface.co")
-response = jongler.make_request(
+response = jongler.requestJSON(
     endpoint="/models/google/gemma-2-9b-it",
     data={
         "inputs": "What is machine learning?",

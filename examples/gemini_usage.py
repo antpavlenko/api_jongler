@@ -42,7 +42,7 @@ def example_text_generation():
         }
         
         # Make the API call to Gemini 1.5 Flash
-        response, status_code = jongler.run(
+        response, status_code = jongler.request(
             method="POST",
             endpoint="/v1beta/models/gemini-1.5-flash:generateContent",
             request=json.dumps(request_data)
@@ -106,7 +106,7 @@ def example_chat_conversation():
         }
         
         # Use Gemini 2.0 Flash (also free tier)
-        response, status_code = jongler.run(
+        response, status_code = jongler.request(
             method="POST",
             endpoint="/v1beta/models/gemini-2.0-flash:generateContent",
             request=json.dumps(request_data)
@@ -160,7 +160,7 @@ def example_with_system_instruction():
             }
         }
         
-        response, status_code = jongler.run(
+        response, status_code = jongler.request(
             method="POST",
             endpoint="/v1beta/models/gemini-1.5-flash:generateContent",
             request=json.dumps(request_data)

@@ -12,3 +12,10 @@ key3 = your-gemini-api-key-3
 key1 = hf_your-huggingface-token-1
 key2 = hf_your-huggingface-token-2
 key3 = hf_your-huggingface-token-3
+
+[httpbin.org]
+# Testing connector - doesn't require real API keys
+# These can be any dummy values for testing
+key1 = dummy-key-1
+key2 = dummy-key-2
+key3 = dummy-key-3

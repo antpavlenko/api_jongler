@@ -32,7 +32,7 @@ def main():
         jongler = APIJongler("httpbin.org", is_tor_enabled=False)
         
         # Make a simple GET request
-        response, status_code = jongler.run(
+        response, status_code = jongler.request(
             method="GET",
             endpoint="/json",
             request=""

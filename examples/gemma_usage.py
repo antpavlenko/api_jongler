@@ -16,7 +16,7 @@ jongler = APIJongler(
 # Example 1: Basic text generation with Gemma 2 9B
 try:
     # Hugging Face Inference API expects the prompt in 'inputs' field
-    response = jongler.make_request(
+    response = jongler.requestJSON(
         endpoint='models/google/gemma-2-9b-it',
         method='POST',
         data={
@@ -39,7 +39,7 @@ except Exception as e:
 try:
     prompt = """You are a helpful assistant. Please explain the concept of machine learning in simple terms that a beginner can understand."""
     
-    response = jongler.make_request(
+    response = jongler.requestJSON(
         endpoint='models/google/gemma-2-27b-it',
         method='POST',
         data={
@@ -64,7 +64,7 @@ try:
     # Note: Some Gemma models support chat format, others expect simple text
     conversation = "Human: What are the benefits of renewable energy?\n\nAssistant:"
     
-    response = jongler.make_request(
+    response = jongler.requestJSON(
         endpoint='models/google/gemma-1.1-7b-it',
         method='POST',
         data={

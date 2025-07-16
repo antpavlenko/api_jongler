@@ -132,7 +132,7 @@ Examples:
         
         jongler = APIJongler(args.connector, is_tor_enabled=args.tor)
         
-        response, status_code = jongler.run(
+        response, status_code = jongler.request(
             method=args.method,
             endpoint=args.endpoint,
             request=args.data
