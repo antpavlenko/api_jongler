@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="api-jongler",
-    version="1.0.0",
+    version="1.1.0",
     author="Anton Pavlenko",
     description="A middleware utility for calling Google AI APIs (Gemini and Gemma) using multiple API keys to reduce need for paid tiers",
     long_description=long_description,
