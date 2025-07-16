@@ -26,8 +26,11 @@ Examples:
   # Make a GET request
   python -m api_jongler.cli httpbin GET /json
 
-  # Make a POST request with data
+  # Make a POST request with OpenAI
   python -m api_jongler.cli openai POST /v1/chat/completions '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Hello"}]}'
+
+  # Use Google Gemini free tier
+  python -m api_jongler.cli gemini POST /v1beta/models/gemini-1.5-flash:generateContent '{"contents":[{"parts":[{"text":"Hello"}]}]}'
 
   # Use Tor connection
   python -m api_jongler.cli --tor httpbin GET /ip

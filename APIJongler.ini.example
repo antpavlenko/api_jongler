@@ -14,6 +14,11 @@ key2 = sk-ant-example-key-2-replace-with-real-key
 key1 = your-google-api-key-1
 key2 = your-google-api-key-2
 
+[gemini]
+key1 = your-gemini-api-key-1
+key2 = your-gemini-api-key-2
+key3 = your-gemini-api-key-3
+
 [httpbin]
 # This connector doesn't require API keys, but we can define dummy ones for testing
 dummy1 = no-key-needed

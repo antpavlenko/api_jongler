@@ -38,7 +38,14 @@ key3 = your-openai-api-key-3
 [anthropic]
 key1 = your-anthropic-api-key-1
 key2 = your-anthropic-api-key-2
+
+[gemini]
+key1 = your-gemini-api-key-1
+key2 = your-gemini-api-key-2
+key3 = your-gemini-api-key-3
 ```
+
+**Note**: For Google Gemini API keys, get them free at [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ## Usage
 
@@ -46,13 +53,13 @@ key2 = your-anthropic-api-key-2
 from api_jongler import APIJongler
 
 # Initialize with an API connector
-jongler = APIJongler("openai", is_tor_enabled=False)
+jongler = APIJongler("gemini", is_tor_enabled=False)
 
-# Make API calls
+# Make API calls to Gemini free tier models
 response, status_code = jongler.run(
     method="POST",
-    endpoint="/v1/chat/completions",
-    request='{"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": "Hello!"}]}'
+    endpoint="/v1beta/models/gemini-1.5-flash:generateContent",
+    request='{"contents":[{"parts":[{"text":"Hello, how are you?"}]}]}'
 )
 
 print(f"Response: {response}")
@@ -71,14 +78,21 @@ API connectors are defined in JSON files in the `connectors/` directory. Example
 
 ```json
 {
-    "name": "openai",
-    "host": "api.openai.com",
+    "name": "gemini",
+    "host": "generativelanguage.googleapis.com",
     "port": 443,
     "protocol": "https",
     "format": "json",
     "requires_api_key": true
 }
 ```
+
+### Pre-configured Connectors
+
+- **OpenAI**: GPT models and other OpenAI services
+- **Anthropic**: Claude models 
+- **Google Gemini**: Free tier Gemini models (gemini-1.5-flash, gemini-2.0-flash)
+- **HTTPBin**: For testing purposes
 
 ## License
 

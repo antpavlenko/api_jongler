@@ -275,6 +275,14 @@ class APIJongler:
         url = f"{self.api_connector.base_url}{endpoint}"
         headers = self._prepare_headers()
         
+        # For Google/Gemini APIs, add API key as query parameter
+        params = {}
+        if self.api_connector.name in ['gemini', 'google'] and self.current_api_key:
+            params['key'] = self.current_api_key
+            # Remove Authorization header for Google APIs since they use query param
+            if 'Authorization' in headers:
+                del headers['Authorization']
+        
         try:
             # Make the request
             response = self.session.request(
@@ -282,6 +290,7 @@ class APIJongler:
                 url=url,
                 data=request,
                 headers=headers,
+                params=params,
                 timeout=30
             )
             
@@ -313,6 +322,7 @@ class APIJongler:
         }
         
         if self.api_connector.requires_api_key and self.current_api_key:
+            # Most APIs use Bearer token authentication
             headers['Authorization'] = f'Bearer {self.current_api_key}'
         
         return headers

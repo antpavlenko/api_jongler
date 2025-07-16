@@ -76,6 +76,10 @@ key3 = test-key-3
 [openai]
 key1 = sk-test-key-1
 key2 = sk-test-key-2
+
+[gemini]
+key1 = test-gemini-key-1
+key2 = test-gemini-key-2
 """
         
         with open(self.config_file, 'w') as f:
@@ -168,36 +172,28 @@ key2 = sk-test-key-2
         # Clean up instances (should not fail even though lock files are gone)
         del jongler1
         del jongler2
+    
+    def test_gemini_connector_loading(self):
+        """Test that Gemini connector loads correctly"""
+        try:
+            jongler = APIJongler("gemini")
+            
+            # Should have loaded the connector
+            self.assertEqual(jongler.api_connector.name, "gemini")
+            self.assertEqual(jongler.api_connector.host, "generativelanguage.googleapis.com")
+            self.assertEqual(jongler.api_connector.port, 443)
+            self.assertEqual(jongler.api_connector.protocol, "https")
+            self.assertTrue(jongler.api_connector.requires_api_key)
+            
+            # Should have selected an API key
+            self.assertIsNotNone(jongler.current_api_key)
+            self.assertIn(jongler.current_api_key, ["test-gemini-key-1", "test-gemini-key-2"])
+            
+            del jongler
+            
+        except Exception as e:
+            self.fail(f"Gemini connector test failed: {e}")
 
-
-class TestIntegration(unittest.TestCase):
-    """Integration tests"""
-    
-    def setUp(self):
-        """Set up test environment"""
-        # Create temporary config file
-        self.temp_dir = tempfile.mkdtemp()
-        self.config_file = Path(self.temp_dir) / "test_config.ini"
-        
-        config_content = """[httpbin]
-key1 = test-key-1
-key2 = test-key-2
-"""
-        
-        with open(self.config_file, 'w') as f:
-            f.write(config_content)
-        
-        os.environ['APIJONGLER_CONFIG'] = str(self.config_file)
-        os.environ['APIJONGLER_LOG_LEVEL'] = 'ERROR'
-    
-    def tearDown(self):
-        """Clean up test environment"""
-        APIJongler.cleanUp()
-        
-        if self.config_file.exists():
-            self.config_file.unlink()
-        Path(self.temp_dir).rmdir()
-    
     def test_http_request(self):
         """Test making actual HTTP request"""
         jongler = APIJongler("httpbin")

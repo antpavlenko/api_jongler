@@ -29,6 +29,7 @@
 - **OpenAI** - api.openai.com (HTTPS, JSON, API key required)
 - **Anthropic** - api.anthropic.com (HTTPS, JSON, API key required)
 - **Google** - generativelanguage.googleapis.com (HTTPS, JSON, API key required)
+- **Google Gemini** - generativelanguage.googleapis.com (HTTPS, JSON, API key required) - **NEW!**
 - **HTTPBin** - httpbin.org (HTTPS, JSON, for testing)
 
 ## 📦 Package Components
@@ -85,6 +86,9 @@ export APIJONGLER_CONFIG=/path/to/APIJongler.ini
 apijongler httpbin GET /json --pretty
 apijongler openai POST /v1/chat/completions '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Hello"}]}'
 
+# Use Google Gemini free tier models
+apijongler gemini POST /v1beta/models/gemini-1.5-flash:generateContent '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+
 # Use Tor
 apijongler --tor httpbin GET /ip
 
@@ -102,12 +106,20 @@ key2 = sk-your-openai-key-2
 [anthropic]
 key1 = sk-ant-your-anthropic-key-1
 key2 = sk-ant-your-anthropic-key-2
+
+[gemini]
+key1 = your-gemini-api-key-1
+key2 = your-gemini-api-key-2
 ```
+
+**Free API Keys Available:**
+- **Google Gemini**: Get free API keys at [Google AI Studio](https://aistudio.google.com/app/apikey)
+- **Free tier models**: `gemini-1.5-flash`, `gemini-2.0-flash` with generous limits
 
 ## ✅ Quality Assurance
 
 ### Testing
-- **9 Unit Tests** covering all major functionality
+- **10 Unit Tests** covering all major functionality
 - **Integration Tests** with real HTTP requests
 - **Error Handling Tests** for missing files, bad configs, etc.
 - **All Tests Pass** ✅
@@ -170,6 +182,8 @@ key2 = sk-ant-your-anthropic-key-2
 6. **Multiple Connectors** - Pre-configured for popular APIs
 7. **Colored Logging** - Enhanced readability
 8. **Module Execution** - Can run as `python -m api_jongler`
+9. **Google Gemini Support** - **NEW!** Free tier API integration with proper authentication
+10. **Gemini Examples** - **NEW!** Dedicated examples for Google's free tier models
 
 ## 📈 Ready for Production
 
