@@ -412,8 +412,53 @@ class APIJongler:
         return self.requestJSON(endpoint, method, data)
 
     def __del__(self):
-        """Destructor - cleanup resources"""
-        self._disconnect()
+        """Destructor - cleanup resources safely during interpreter shutdown.
+
+        Avoid logging and imports that may fail when Python is finalizing.
+        Perform best-effort cleanup and never raise from __del__.
+        """
+        try:
+            import sys  # local import in case globals are torn down
+            is_finalizing = getattr(sys, "is_finalizing", lambda: False)
+            finalizing = True if not callable(is_finalizing) else bool(is_finalizing())
+        except Exception:
+            finalizing = True
+
+        if finalizing:
+            # Minimal, no-logging cleanup path
+            try:
+                lock_path = getattr(self, "lock_file_path", None)
+                if lock_path:
+                    try:
+                        import os  # local import
+                        os.unlink(str(lock_path))
+                    except FileNotFoundError:
+                        pass
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            try:
+                sess = getattr(self, "session", None)
+                if sess:
+                    try:
+                        sess.close()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        else:
+            # Normal cleanup path; still guard to never raise from __del__
+            try:
+                self._disconnect()
+            except Exception:
+                try:
+                    sess = getattr(self, "session", None)
+                    if sess:
+                        sess.close()
+                except Exception:
+                    pass
     
     @staticmethod
     def cleanUp(api_connector: Optional[str] = None):
