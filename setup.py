@@ -5,9 +5,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="api-jongler",
-    version="1.1.1",
+    version="2.0.5",
     author="Anton Pavlenko",
-    description="A middleware utility for calling Google AI APIs (Gemini and Gemma) using multiple API keys to reduce need for paid tiers",
+    description="A middleware utility for calling Google AI APIs (Gemini and Gemma) using multiple API keys with intelligent rate limiting and retry logic",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/antonpavlenko/api-jongler",
@@ -46,6 +46,7 @@ setup(
     entry_points={
         "console_scripts": [
             "apijongler=api_jongler.cli:main",
+            "api-jongler=api_jongler.cli:main",
         ],
     },
 )

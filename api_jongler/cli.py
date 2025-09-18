@@ -13,7 +13,7 @@ from pathlib import Path
 if __name__ == "__main__" and "site-packages" not in __file__:
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from api_jongler import APIJongler
+from api_jongler import APIJongler, __version__
 
 
 def main():
@@ -22,18 +22,24 @@ def main():
         description="APIJongler - Middleware for managing multiple API keys",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
+Examples (use either 'apijongler' or 'api-jongler'):
   # Use Google Gemini free tier
-  python -m api_jongler.cli generativelanguage.googleapis.com POST /v1beta/models/gemini-1.5-flash:generateContent '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+  apijongler generativelanguage.googleapis.com POST /v1beta/models/gemini-1.5-flash:generateContent '{"contents":[{"parts":[{"text":"Hello"}]}]}'
 
   # Use Gemma models via Hugging Face
-  python -m api_jongler.cli api-inference.huggingface.co POST /models/google/gemma-2-9b-it '{"inputs":"What is machine learning?","parameters":{"max_new_tokens":100}}'
+  apijongler api-inference.huggingface.co POST /models/google/gemma-2-9b-it '{"inputs":"What is machine learning?","parameters":{"max_new_tokens":100}}'
+
+  # (Alias) Using the hyphenated entry point
+  api-jongler --log-level DEBUG generativelanguage.googleapis.com GET /v1beta/models
 
   # Clean up lock files for Gemini
-  python -m api_jongler.cli --cleanup generativelanguage.googleapis.com
+  apijongler --cleanup generativelanguage.googleapis.com
 
   # Clean up all lock files
-  python -m api_jongler.cli --cleanup-all
+  apijongler --cleanup-all
+
+  # Show version
+  apijongler --version
         """
     )
     
@@ -97,9 +103,19 @@ Examples:
         action="store_true",
         help="Pretty-print JSON responses"
     )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Print version information and exit"
+    )
     
     args = parser.parse_args()
     
+    # Handle version early
+    if args.version:
+        print(f"api-jongler version {__version__}")
+        return 0
+
     # Set logging level
     os.environ['APIJONGLER_LOG_LEVEL'] = args.log_level
     
