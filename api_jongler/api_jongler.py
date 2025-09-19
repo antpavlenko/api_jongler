@@ -157,8 +157,17 @@ class APIJongler:
         else:
             self._session = requests.Session()
         
-        # Get available API keys and select one
-        if not self._selectApiKey():
+        # Get available API keys and select one: prefer VACANT, fallback to LOCKDOWN if none
+        try:
+            selected = self._selectApiKey(include_lockdown=False)
+        except RuntimeError:
+            selected = False
+        if not selected:
+            try:
+                selected = self._selectApiKey(include_lockdown=True)
+            except RuntimeError:
+                selected = False
+        if not selected:
             raise RuntimeError("No API keys available for initial connection")
         
         self._logger.info(f"Successfully connected to {api_connector_name}")
@@ -370,7 +379,7 @@ class APIJongler:
         # 2xx codes are successful, 3xx redirects are also considered successful
         return 200 <= status_code < 400
     
-    def _selectApiKey(self) -> bool:
+    def _selectApiKey(self, include_lockdown: bool = True) -> bool:
         """
         Select an available API key using the new state-based logic.
         Returns True if a key was selected, False if no keys available.
@@ -389,16 +398,17 @@ class APIJongler:
             self._logger.info(f"Selected VACANT key: {key_name} (locked)")
             return True
         
-        # Priority 2: Try LOCKDOWN keys that haven't been tried in this connection
-        available_lockdown = states['lockdown'] - self._tried_keys_in_connection
-        if available_lockdown:
-            key_name = list(available_lockdown)[0]
-            self._current_api_key = api_keys[key_name]
-            self._current_api_key_name = key_name
-            self._setKeyState(key_name, 'lock')
-            self._tried_keys_in_connection.add(key_name)
-            self._logger.info(f"Selected LOCKDOWN key: {key_name} (locked)")
-            return True
+        # Priority 2: Optionally try LOCKDOWN keys that haven't been tried in this connection
+        if include_lockdown:
+            available_lockdown = states['lockdown'] - self._tried_keys_in_connection
+            if available_lockdown:
+                key_name = list(available_lockdown)[0]
+                self._current_api_key = api_keys[key_name]
+                self._current_api_key_name = key_name
+                self._setKeyState(key_name, 'lock')
+                self._tried_keys_in_connection.add(key_name)
+                self._logger.info(f"Selected LOCKDOWN key: {key_name} (locked)")
+                return True
         
         # No available keys
         if not api_keys:
@@ -417,21 +427,47 @@ class APIJongler:
         if self._current_api_key_name:
             if self._isRateLimitError(status_code):
                 # Move current key to LOCKDOWN
-                self._setKeyState(self._current_api_key_name, 'lockdown')
-                self._logger.info(f"Key {self._current_api_key_name} moved to LOCKDOWN due to rate limit (status {status_code})")
-                
-                # Try to select another key
+                prev_key = self._current_api_key_name
+                self._setKeyState(prev_key, 'lockdown')
+                self._logger.info(f"Key {prev_key} moved to LOCKDOWN due to rate limit (status {status_code})")
+
+                # Build candidate list: VACANT first, then LOCKDOWN, excluding already tried keys and the just-locked key
                 try:
-                    if self._selectApiKey():
-                        return True  # Retry with new key
-                except RuntimeError:
-                    # No more keys available, will return current response
-                    pass
+                    api_keys = self._getApiKeys()
+                    states = self._getKeyStates()
+                except Exception:
+                    states = {'vacant': set(), 'lockdown': set(), 'locked': set(), 'error': set()}
+                    api_keys = {}
+
+                candidates_ordered = []
+                vacant_candidates = list((states.get('vacant', set()) - self._tried_keys_in_connection) - {prev_key})
+                lockdown_candidates = list((states.get('lockdown', set()) - self._tried_keys_in_connection) - {prev_key})
+                candidates_ordered.extend(vacant_candidates)
+                candidates_ordered.extend(lockdown_candidates)
+
+                for key_name in candidates_ordered:
+                    if key_name not in api_keys:
+                        continue
+                    # Skip if in error state
+                    if key_name in states.get('error', set()):
+                        continue
+                    # Select this key
+                    self._current_api_key = api_keys[key_name]
+                    self._current_api_key_name = key_name
+                    self._setKeyState(key_name, 'lock')
+                    self._tried_keys_in_connection.add(key_name)
+                    self._logger.info(f"Retrying with next key: {key_name}")
+                    return True
+
+                # No candidates to try
+                self._logger.info(
+                    "No alternative keys available after 429; not retrying"
+                )
             else:
                 # Non-rate-limit error, just remove lock
                 self._setKeyState(self._current_api_key_name, 'vacant')
                 self._logger.debug(f"Key {self._current_api_key_name} returned to VACANT after non-rate-limit error")
-        
+
         return False  # Don't retry
     
     def _handleRequestSuccess(self) -> None:
@@ -466,15 +502,26 @@ class APIJongler:
         if self._current_api_key_name:
             self._tried_keys_in_connection.add(self._current_api_key_name)
         
-        # Use the key already selected during connection, don't select a new one
+        # Use the key already selected during connection; if missing, select VACANT, fallback to LOCKDOWN
         if not self._current_api_key or not self._current_api_key_name:
-            if not self._selectApiKey():
+            try:
+                selected = self._selectApiKey(include_lockdown=False)
+            except RuntimeError:
+                selected = False
+            if not selected:
+                try:
+                    selected = self._selectApiKey(include_lockdown=True)
+                except RuntimeError:
+                    selected = False
+            if not selected:
                 raise RuntimeError("No API keys available for request")
         
         last_response_text = ""
         last_status_code = 500
         
+        attempt = 0
         while True:
+            attempt += 1
             # Prepare request
             url = f"{self._api_connector.BaseUrl}{endpoint}"
             headers = self._prepareHeaders()
@@ -488,6 +535,9 @@ class APIJongler:
                     del headers['Authorization']
             
             try:
+                # Log the key being used for this attempt
+                if self._current_api_key_name:
+                    self._logger.info(f"Attempt {attempt}: using key '{self._current_api_key_name}'")
                 # Make the request
                 response = self._session.request(
                     method=method.upper(),
@@ -697,6 +747,15 @@ class APIJongler:
             except Exception as e:
                 logger.error(f"Failed to remove lock file {lock_file}: {e}")
         
+        # Remove lockdown files
+        lockdown_files = glob.glob(str(lock_dir / f"{pattern}.lockdown"))
+        for lockdown_file in lockdown_files:
+            try:
+                os.unlink(lockdown_file)
+                logger.info(f"Removed lockdown file: {Path(lockdown_file).name}")
+            except Exception as e:
+                logger.error(f"Failed to remove lockdown file {lockdown_file}: {e}")
+
         # Remove error files
         error_files = glob.glob(str(lock_dir / f"{pattern}.error"))
         for error_file in error_files:
@@ -706,7 +765,7 @@ class APIJongler:
             except Exception as e:
                 logger.error(f"Failed to remove error file {error_file}: {e}")
         
-        removed_count = len(lock_files) + len(error_files)
+        removed_count = len(lock_files) + len(lockdown_files) + len(error_files)
         logger.info(f"Cleanup completed. Removed {removed_count} files.")
 
     def disconnect(self) -> None:
